@@ -62,6 +62,27 @@ def valid_branches(valid: list[int] = []) -> Iterator[list[int]]:
             else:
                 queue.append(new_valid)
 
+def invalid_branches(invalid: list[int] = []) -> Iterator[list[int]]:
+    queue = deque()
+    queue.append(invalid)
+
+    while queue:
+        current = queue.popleft()
+        depth = len(current)
+        if depth == args.maxsamples:
+            continue
+
+        prune_prob = binprob(current + [args.base - 1])
+
+        for i in range(args.base):
+            new_invalid = current + [i]
+
+            if i != args.base - 1 and prune_prob < 1 - P:
+                yield new_invalid
+                continue
+
+            queue.append(new_invalid)
+
 def real_probability() -> float:
     return ((args.base ** args.maxsamples) // (1 / P)) / (args.base ** args.maxsamples)
 
@@ -73,7 +94,13 @@ def main() -> None:
 
     valid = valid_branches()
     print("Any combination of sample results below is successful:")
-    print(*sorted(valid, reverse=True), sep=", ")
+    valid_formatted = [''.join(map(str, v)) for v in valid]
+    print(*sorted(valid_formatted, reverse=True), sep=",\n")
+
+    invalid = invalid_branches()
+    print("Any combination of sample results below is unsuccessful:")
+    invalid_formatted = [''.join(map(str, v)) for v in invalid]
+    print(*sorted(invalid_formatted, reverse=True), sep=",\n")
 
     rP = real_probability()
     print(f"The exact probability being estimated is {rP}, with a {(P - rP) / P * 100:.2f}% margin of error.\nIncrease the number of samples to increase the accuracy.")
